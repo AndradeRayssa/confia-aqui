@@ -3,7 +3,7 @@ import BotaoRespostas from "./BotaoRespostas";
 function CardPerguntas({ pergunta, onResponder, animacao, selectedOptionId, correctOptionId, wrongOptionId }) {
 
     return (
-        <main className="flex justify-center items-center w-screen h-screen bg-gray-50 px-4">
+        <div className="w-full flex justify-center items-center px-4">
         <div
             className={`bg-white w-full max-w-xl shadow-xl rounded-2xl p-10 transition-all duration-300
                 ${animacao === "correto" ? "ring-4 ring-green-400 scale-[1.02]" : ""}
@@ -46,8 +46,8 @@ function CardPerguntas({ pergunta, onResponder, animacao, selectedOptionId, corr
                 })()}
             </div>
         </div>
-    </main>
-    );
+    </div>
+  );
 }
 
 export default CardPerguntas;
