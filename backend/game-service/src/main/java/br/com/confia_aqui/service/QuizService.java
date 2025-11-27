@@ -66,7 +66,7 @@ public class QuizService {
         List<Question> questionsFromDB = quiz.getQuestions();
         List<QuestionWrapper> questionsForUser = new ArrayList<>();
 
-        //question wrapper (responsavel para nao enviar a resposta correta pro user)
+        //question wrapper (responsavel para nao enviar a resposta correta)
         for (Question q : questionsFromDB) {
             QuestionWrapper qw = new QuestionWrapper(
                 q.getId(),
@@ -82,7 +82,7 @@ public class QuizService {
         return new ResponseEntity<>(questionsForUser, HttpStatus.OK);
     }
 
-    //calcula o resultado do quiz - MUDANCA REALIZADA AQUI (array tirado, 1st pergunta estava como indice 0)
+    //calcula o resultado do quiz
     public ResponseEntity<QuizResult> calculateResult(Integer id, List<Response> responses) {
         Optional<Quiz> quizOptional = quizDao.findById(id);
 
@@ -98,28 +98,39 @@ public class QuizService {
         }
 
         int correctAnswers = 0;
+        logger.debug("[QuizService] calculateResult called: quizId={}, responses.size={}", id, responses == null ? 0 : responses.size());
+        if (responses.size() != questions.size()) {
+            logger.warn("[QuizService] number of responses ({}) does not match quiz question count ({}) for quiz {}", responses.size(), questions.size(), id);
+        }
 
         // iterate as respostas e busca a pergunta correspondente pelo ID
         for (Response response : responses) {
+            logger.debug("[QuizService] response item: id={}, response={}", response.getId(), response.getResponse());
             if (response.getId() == null || response.getResponse() == null) {
                 continue;
             }
 
             // busca a pergunta pelo ID em vez de usar índice
+            boolean foundQuestion = false;
             for (Question question : questions) {
                 if (question.getId().equals(response.getId())) {
+                    foundQuestion = true;
                     if (question.getRightAnswer() != null) {
                         String respTrim = response.getResponse().trim();
                         String rightTrim = question.getRightAnswer().trim();
                         if (respTrim.equalsIgnoreCase(rightTrim)) {
                             correctAnswers++;
+                            logger.debug("[QuizService] question id={} correct", question.getId());
                         }
                     }
                     break;
                 }
             }
+            if (!foundQuestion) {
+                logger.warn("[QuizService] response id {} not found in quiz {}", response.getId(), id);
+            }
         }
-
+        logger.debug("[QuizService] compute result: quizId={} questions.size={} correctAnswers={}", id, questions.size(), correctAnswers);
         QuizResult result = new QuizResult(id, questions.size(), correctAnswers);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }

@@ -68,10 +68,18 @@ export function useGerenciarTeste() {
         }
     }
 
-    async function finalizarQuiz() {
-        const resp = await submitQuiz(quizId, respostas);
-        setResultado(resp);
-        setFinalizado(true);
+    async function finalizarQuiz(respArray) {
+        const toSend = respArray && Array.isArray(respArray) ? respArray : respostas;
+        try {
+            console.debug(`[gerenciarTeste] Submitting quiz id=${quizId} responses=${toSend ? toSend.length : 0}`);
+            console.debug(toSend);
+            const resp = await submitQuiz(quizId, toSend);
+            setResultado(resp);
+        } catch (err) {
+            console.error('[gerenciarTeste] Error submitting quiz:', err);
+        } finally {
+            setFinalizado(true);
+        }
     }
 
     async function responder(respostaSelecionada) {
@@ -92,13 +100,16 @@ export function useGerenciarTeste() {
             acertou = false;
         }
 
-        setRespostas((prev) => [
-            ...prev,
-            {
-                id: perguntaAtual.id, 
-                response: respostaSelecionada.texto
-            }
-        ]);
+        let currentResponses = null;
+        const newResponseEntry = { id: perguntaAtual.id, response: respostaSelecionada.texto };
+        setRespostas((prev) => {
+            const next = [
+                ...prev,
+                newResponseEntry
+            ];
+            currentResponses = next;
+            return next;
+        });
 
         if (acertou) {
             setCorrectOptionId(respostaSelecionada.id);
@@ -127,7 +138,7 @@ export function useGerenciarTeste() {
 
         setAnimacao(acertou ? "correto" : "errado");
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 setAnimacao(null);
                 setSelectedOptionId(null);
                 setCorrectOptionId(null);
@@ -142,7 +153,7 @@ export function useGerenciarTeste() {
                 if (indexAtual + 1 < perguntas.length) {
                     setIndexAtual((i) => i + 1);
                 } else {
-                    finalizarQuiz();
+                    await finalizarQuiz(currentResponses);
                 }
                 setIsChecking(false);
             }, ANSWER_DELAY_MS);
