@@ -115,7 +115,6 @@ function HomeAdmin() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Tem certeza que deseja deletar esta FAQ?")) {
       try {
         await removeFaq(id);
         setMensagem("FAQ deletada com sucesso!");
@@ -124,7 +123,6 @@ function HomeAdmin() {
         setMensagem("Erro ao deletar FAQ.");
         setTipoMensagem("erro");
       }
-    }
   };
 
   return (
@@ -190,7 +188,40 @@ function HomeAdmin() {
                     <h3 className="text-lg font-bold text-azul mb-2 group-hover:text-azul/80 transition-colors">
                       {faq.pergunta}
                     </h3>
-                    <p className="text-cinza-500 leading-relaxed">{faq.resposta}</p>
+                    {(() => {
+                      const r = faq.resposta || "";
+                      if (r.includes('•')) {
+                        const isStartingWithBullet = r.trim().startsWith('•');
+                        const parts = r.split('•').map(p => p.trim()).filter(Boolean);
+                        return (
+                          <div className="text-cinza-500 leading-relaxed">
+                            {!isStartingWithBullet && parts.length > 0 && <p className="mb-2">{parts[0]}</p>}
+                            {parts.length > (isStartingWithBullet ? 0 : 1) && (
+                              <ul className="list-disc pl-6">
+                                {parts.slice(isStartingWithBullet ? 0 : 1).map((item, i) => (
+                                  <li key={i} className="mb-1">{item}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      }
+                      if (r.includes('\n')) {
+                        const lines = r.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                        if (lines.length === 1) return <p className="text-cinza-500 leading-relaxed">{lines[0]}</p>;
+                        return (
+                          <div className="text-cinza-500 leading-relaxed">
+                            <p className="mb-2">{lines[0]}</p>
+                            <ul className="list-disc pl-6">
+                              {lines.slice(1).map((l, i) => (
+                                <li key={i} className="mb-1">{l}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      }
+                      return <p className="text-cinza-500 leading-relaxed">{r}</p>
+                    })()}
                   </div>
                   <div className="flex flex-col gap-2 flex-shrink-0">
                     <button
